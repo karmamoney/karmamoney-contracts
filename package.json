@@ -6,7 +6,9 @@
   "author": "Laszlo Fazekas <thebojda@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "blockchain": "hardhat node",
+    "deploy": "hardhat run --network localhost scripts/deploy.ts"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
