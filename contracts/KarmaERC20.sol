@@ -12,6 +12,7 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
     mapping(address => uint256) private _cycleRewards;
 
     event CycleRewardChanged(address indexed owner, uint256 value);
+    event CycleMined(address[] nodes, uint256 value, address miner);
 
     error KarmaInvalidCycle();
     error KarmaExpiredSignature(uint256 deadline);
@@ -86,6 +87,8 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
         _debts[last_target][nodes[0]] -= min;
         _balances[last_target] -= min;
         _transfer(last_target, miner, _cycleRewards[last_target]);
+
+        emit CycleMined(nodes, min, miner);
 
         return true;
     }
