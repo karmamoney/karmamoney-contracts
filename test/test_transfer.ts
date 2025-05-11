@@ -75,4 +75,14 @@ describe("Testing karma transfers", () => {
         assert.equal(await contract.balanceOf(BOB.address), ethers.toBigInt(11))
         assert.equal(await contract.balanceOf(EVE.address), ethers.toBigInt(1))
     })
+
+    it("Check overflow on transfer", async () => {
+        const MAX_UINT256_MINUS_ONE = ethers.toBigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff") - 1n;
+        try {
+            await contract.connect(ALICE).transfer(BOB.address, MAX_UINT256_MINUS_ONE);
+            assert.fail("Expected arithmetic overflow, but no error was thrown");
+        } catch (error: any) {
+            assert.include(error.message, "reverted with panic code 0x11", "Error message does not contain 'arithmetic overflow'");
+        }
+    })
 });

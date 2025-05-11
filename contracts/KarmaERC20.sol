@@ -85,7 +85,7 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
         address last_target = nodes[nodes.length - 1];
         _debts[last_target][nodes[0]] -= min;
         _balances[last_target] -= min;
-        _transfer(last_target, msg.sender, _cycleRewards[last_target]);
+        _transfer(last_target, miner, _cycleRewards[last_target]);
 
         return true;
     }
@@ -143,7 +143,8 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
         uint256 deadline,
         uint8 v,
         bytes32 r,
-        bytes32 s
+        bytes32 s,
+        address miner
     ) public virtual {
         if (block.timestamp > deadline) {
             revert KarmaExpiredSignature(deadline);
@@ -169,10 +170,7 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
         }
 
         _transfer(signer, to, amount);
-
-        if (fee > 0) {
-            _transfer(signer, _msgSender(), fee);
-        }
+        _transfer(signer, miner, fee);
     }
 
     function metaTransferBatch(
@@ -181,7 +179,8 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
         uint256[] calldata amount,
         uint256[] calldata fee,
         uint256[] calldata deadline,
-        bytes[] calldata signature
+        bytes[] calldata signature,
+        address miner
     ) public virtual {
         for (uint i = 0; i < from.length; i++) {
             if (block.timestamp > deadline[i]) {
@@ -212,10 +211,7 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
             }
 
             _transfer(recoveredAddress, to[i], amount[i]);
-
-            if (fee[i] > 0) {
-                _transfer(recoveredAddress, _msgSender(), fee[i]);
-            }
+            _transfer(recoveredAddress, miner, fee[i]);
         }
     }
 
