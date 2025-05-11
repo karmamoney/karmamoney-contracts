@@ -55,7 +55,10 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
         return _debts[debtor][creditor];
     }
 
-    function mineCycle(address[] memory nodes) public virtual returns (bool) {
+    function mineCycle(
+        address miner,
+        address[] memory nodes
+    ) public virtual returns (bool) {
         // store the last debt (end of cycle) as min
         uint256 min = _debts[nodes[nodes.length - 1]][nodes[0]];
 
@@ -75,7 +78,7 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
             address target = nodes[i];
             _debts[target][nodes[i + 1]] -= min;
             _balances[target] -= min;
-            _transfer(target, msg.sender, _cycleRewards[target]);
+            _transfer(target, miner, _cycleRewards[target]);
         }
 
         // ... last node
@@ -109,7 +112,7 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
         bytes32 s
     ) public virtual {
         if (block.timestamp > deadline) {
-            revert ERC2612ExpiredSignature(deadline);
+            revert KarmaExpiredSignature(deadline);
         }
 
         bytes32 structHash = keccak256(
@@ -126,7 +129,7 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
 
         address signer = ECDSA.recover(hash, v, r, s);
         if (signer != owner) {
-            revert ERC2612InvalidSigner(signer, owner);
+            revert KarmaInvalidSigner(signer, owner);
         }
 
         _setCycleReward(owner, amount);
@@ -143,7 +146,7 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
         bytes32 s
     ) public virtual {
         if (block.timestamp > deadline) {
-            revert ERC2612ExpiredSignature(deadline);
+            revert KarmaExpiredSignature(deadline);
         }
 
         bytes32 structHash = keccak256(
@@ -162,11 +165,14 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
 
         address signer = ECDSA.recover(hash, v, r, s);
         if (signer != from) {
-            revert ERC2612InvalidSigner(signer, from);
+            revert KarmaInvalidSigner(signer, from);
         }
 
         _transfer(signer, to, amount);
-        _transfer(signer, _msgSender(), fee);
+
+        if (fee > 0) {
+            _transfer(signer, _msgSender(), fee);
+        }
     }
 
     function metaTransferBatch(
@@ -179,7 +185,7 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
     ) public virtual {
         for (uint i = 0; i < from.length; i++) {
             if (block.timestamp > deadline[i]) {
-                revert ERC2612ExpiredSignature(deadline[i]);
+                revert KarmaExpiredSignature(deadline[i]);
             }
 
             bytes32 structHash = keccak256(
@@ -202,11 +208,14 @@ abstract contract KarmaERC20 is ERC20, ERC20Permit, ERC1363 {
             if (
                 err != ECDSA.RecoverError.NoError || recoveredAddress != from[i]
             ) {
-                revert ERC2612InvalidSigner(recoveredAddress, from[i]);
+                revert KarmaInvalidSigner(recoveredAddress, from[i]);
             }
 
             _transfer(recoveredAddress, to[i], amount[i]);
-            _transfer(recoveredAddress, _msgSender(), fee[i]);
+
+            if (fee[i] > 0) {
+                _transfer(recoveredAddress, _msgSender(), fee[i]);
+            }
         }
     }
 
